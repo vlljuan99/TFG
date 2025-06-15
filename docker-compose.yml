@@ -1,0 +1,48 @@
+version: '3.9'
+services:
+  django:
+    build: ./OpenMonitor/django_app
+    container_name: django
+    volumes:
+      - ./OpenMonitor/django_app:/app
+    env_file:
+      - ./OpenMonitor/django_app/.env
+    depends_on:
+      - bbdd_django
+    networks:
+      - openmonitor_network
+  vue:
+    build: ./OpenMonitor/vue_frontend
+    container_name: vue
+    volumes:
+      - ./OpenMonitor/vue_frontend:/app
+    networks:
+      - openmonitor_network
+  bbdd_django:
+    image: postgres:15
+    container_name: bbdd_django
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: openmonitor
+      POSTGRES_USER: openmonitor
+      POSTGRES_PASSWORD: openmonitor
+    networks:
+      - openmonitor_network
+  nginx:
+    build:
+      context: ./OpenMonitor/nginx
+      dockerfile: Dockerfile.nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+      - vue
+    networks:
+      - openmonitor_network
+volumes:
+  pgdata:
+networks:
+  openmonitor_network:
+    driver: bridge
