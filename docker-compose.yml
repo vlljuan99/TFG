@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile.nginx
     container_name: nginx
     ports:
-      - "80:80"
+      - "8081:80"
     depends_on:
       - django
       - vue
