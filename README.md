@@ -24,3 +24,5 @@ Esto levantará todos los contenedores y la aplicación estará disponible en `h
 3. Para sincronizar datos con la instancia pública de OpenProject, realiza una petición `POST` a `/openmonitor-api/sync/` usando un token de administrador.
 
 Las métricas disponibles muestran el número de _work packages_ abiertos y cerrados por proyecto.
+
+Los usuarios administradores pueden gestionar cuentas inactivas desde el propio frontend. Tras iniciar sesión con un usuario con permisos de administrador, se habilita un apartado "Manage Users" que permite activar cuentas pendientes. Este apartado consume los endpoints `/openmonitor-api/inactive-users/` y `/openmonitor-api/activate-user/<id>/`.

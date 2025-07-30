@@ -43,6 +43,21 @@ curl -X POST \
 
 `GET /openmonitor-api/projects/` devuelve cada proyecto con el número de paquetes de trabajo abiertos y cerrados.
 
+## Gestión de usuarios inactivos
+
+Los administradores pueden consultar las cuentas no activadas mediante:
+
+```bash
+curl -H "Authorization: Token <admin_token>" http://localhost:8000/openmonitor-api/inactive-users/
+```
+
+Para activar una cuenta específica:
+
+```bash
+curl -X POST -H "Authorization: Token <admin_token>" \
+  http://localhost:8000/openmonitor-api/activate-user/<id>/
+```
+
 ## Pruebas
 
 ```bash

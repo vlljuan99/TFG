@@ -6,7 +6,8 @@ from rest_framework import viewsets, permissions, status
 from django.db import models
 
 from .models import OPProject, WorkPackage, OPUser, OPStatus
-from .serializers import ProjectSerializer
+from .serializers import ProjectSerializer, UserSerializer
+from django.contrib.auth.models import User
 
 OPENPROJECT_URL = "https://community.openproject.org/api/v3"
 
@@ -98,3 +99,23 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
             ),
         )
         return qs
+
+
+class InactiveUserList(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.filter(is_active=False)
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
+class ActivateUserView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        user = User.objects.get(pk=pk)
+        user.is_active = True
+        user.save()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

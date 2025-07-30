@@ -9,6 +9,7 @@
       <div>
         <button @click="fetchStatus">Check OpenProject</button>
         <button @click="fetchProjects">Load KPIs</button>
+        <button v-if="isAdmin" @click="fetchInactiveUsers">Manage Users</button>
       </div>
       <p v-if="status">Status: {{ status }}</p>
       <table v-if="projects.length">
@@ -27,6 +28,15 @@
           </tr>
         </tbody>
       </table>
+      <div v-if="isAdmin && inactiveUsers.length">
+        <h3>Inactive Users</h3>
+        <ul>
+          <li v-for="u in inactiveUsers" :key="u.id">
+            {{ u.username }}
+            <button @click="activateUser(u.id)">Activate</button>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
@@ -40,6 +50,8 @@ export default {
     const token = ref(localStorage.getItem('token') || '')
     const status = ref('')
     const projects = ref([])
+    const inactiveUsers = ref([])
+    const isAdmin = ref(false)
     let interval
 
     const login = async () => {
@@ -51,6 +63,7 @@ export default {
       const data = await res.json()
       token.value = data.token
       localStorage.setItem('token', token.value)
+      await fetchInactiveUsers()
     }
 
     const fetchStatus = async () => {
@@ -68,6 +81,27 @@ export default {
       projects.value = await res.json()
     }
 
+    const fetchInactiveUsers = async () => {
+      const res = await fetch('/openmonitor-api/inactive-users/', {
+        headers: { Authorization: `Token ${token.value}` }
+      })
+      if (res.status === 200) {
+        inactiveUsers.value = await res.json()
+        isAdmin.value = true
+      } else {
+        isAdmin.value = false
+        inactiveUsers.value = []
+      }
+    }
+
+    const activateUser = async (id) => {
+      await fetch(`/openmonitor-api/activate-user/${id}/`, {
+        method: 'POST',
+        headers: { Authorization: `Token ${token.value}` }
+      })
+      await fetchInactiveUsers()
+    }
+
     const startPolling = () => {
       if (interval) clearInterval(interval)
       interval = setInterval(fetchProjects, 60000)
@@ -76,18 +110,20 @@ export default {
     if (token.value) {
       fetchProjects()
       startPolling()
+      fetchInactiveUsers()
     }
 
     watch(token, (val) => {
       if (val) {
         fetchProjects()
         startPolling()
+        fetchInactiveUsers()
       } else if (interval) {
         clearInterval(interval)
       }
     })
 
-    return { username, password, token, login, fetchStatus, fetchProjects, status, projects }
+    return { username, password, token, login, fetchStatus, fetchProjects, status, projects, inactiveUsers, activateUser, isAdmin, fetchInactiveUsers }
   }
 }
 </script>
