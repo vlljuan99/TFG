@@ -6,20 +6,41 @@
       <button @click="login">Login</button>
     </div>
     <div v-else>
-      <button @click="fetchStatus">Check OpenProject</button>
+      <div>
+        <button @click="fetchStatus">Check OpenProject</button>
+        <button @click="fetchProjects">Load KPIs</button>
+      </div>
       <p v-if="status">Status: {{ status }}</p>
+      <table v-if="projects.length">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Open</th>
+            <th>Closed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in projects" :key="p.openproject_id">
+            <td>{{ p.name }}</td>
+            <td>{{ p.open_packages }}</td>
+            <td>{{ p.closed_packages }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 export default {
   setup() {
     const username = ref('')
     const password = ref('')
     const token = ref(localStorage.getItem('token') || '')
     const status = ref('')
+    const projects = ref([])
+    let interval
 
     const login = async () => {
       const res = await fetch('/openmonitor-api/token-auth/', {
@@ -40,7 +61,33 @@ export default {
       status.value = data.openproject_status
     }
 
-    return { username, password, token, login, fetchStatus, status }
+    const fetchProjects = async () => {
+      const res = await fetch('/openmonitor-api/projects/', {
+        headers: { Authorization: `Token ${token.value}` }
+      })
+      projects.value = await res.json()
+    }
+
+    const startPolling = () => {
+      if (interval) clearInterval(interval)
+      interval = setInterval(fetchProjects, 60000)
+    }
+
+    if (token.value) {
+      fetchProjects()
+      startPolling()
+    }
+
+    watch(token, (val) => {
+      if (val) {
+        fetchProjects()
+        startPolling()
+      } else if (interval) {
+        clearInterval(interval)
+      }
+    })
+
+    return { username, password, token, login, fetchStatus, fetchProjects, status, projects }
   }
 }
 </script>
